@@ -38,28 +38,38 @@ constructor(){
         _;
     }
 
-    function createProposal(address recipient, uint256 amount) external {
+    event proposalCreated(address indexed proposer, address recipient, uint amount);
+    event proposalApproved(uint indexed proposer_id);
+    event proposalexecuted(uint indexed proposer);
+
+    function createProposal(address _recipient, uint256 _amount) external {
         proposalCount++;
 
         proposals[proposalCount] = Proposal({
             id: proposalCount,
             proposer: msg.sender,
-            recipient: recipient,
-            amount: amount,
+            recipient: _recipient,
+            amount: _amount,
             status: ProposalStatus.CREATED
         });
+
+        emit proposalCreated(msg.sender, _recipient, _amount);
     }
 
     function approveProposal(uint _id)external onlyAdmin {
         Proposal storage proposal = proposals[_id];
         if(proposal.status != ProposalStatus.CREATED) revert INVALID_PROPOSAL_STATUS();
         proposals[_id].status = ProposalStatus.APPROVED;
+
+        emit proposalApproved(_id);
     }
 
     function executeProposal(uint _id)external onlyAdmin {
         Proposal storage proposal = proposals[_id];
         if(proposal.status != ProposalStatus.APPROVED) revert INVALID_PROPOSAL_STATUS();
         proposals[_id].status = ProposalStatus.EXECUTED;
+
+        emit proposalexecuted(_id);
     }
 
     function getProposalByid(uint _id) external view returns (Proposal memory) {

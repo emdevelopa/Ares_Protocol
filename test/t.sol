@@ -124,6 +124,7 @@ contract CounterTest is Test {
 
         vm.prank(user);
         proposalManager.createProposal(recipient, 2);
+        proposalManager.approveProposal(1);
 
       
         proposalManager.executeProposal(1);
