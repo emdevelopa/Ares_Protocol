@@ -4,6 +4,8 @@ pragma solidity ^0.8.28;
 
 error Not_Admin();
 error INVALID_PROPOSAL_STATUS();
+error PROPOSAL_DOES_NOT_EXIST();
+ 
 
 contract ProposalManager {
 
@@ -38,6 +40,11 @@ constructor(){
         _;
     }
 
+      modifier proposalExists(uint256 proposalId) {
+        if(proposalCount > 0 && proposalId != proposalCount) revert PROPOSAL_DOES_NOT_EXIST(); 
+        _;
+      }
+
     event proposalCreated(address indexed proposer, address recipient, uint amount);
     event proposalApproved(uint indexed proposer_id);
     event proposalexecuted(uint indexed proposer);
@@ -56,7 +63,7 @@ constructor(){
         emit proposalCreated(msg.sender, _recipient, _amount);
     }
 
-    function approveProposal(uint _id)external onlyAdmin {
+    function approveProposal(uint _id)external onlyAdmin proposalExists(_id){
         Proposal storage proposal = proposals[_id];
         if(proposal.status != ProposalStatus.CREATED) revert INVALID_PROPOSAL_STATUS();
         proposals[_id].status = ProposalStatus.APPROVED;
@@ -64,7 +71,7 @@ constructor(){
         emit proposalApproved(_id);
     }
 
-    function executeProposal(uint _id)external onlyAdmin {
+    function executeProposal(uint _id)external onlyAdmin proposalExists(_id){
         Proposal storage proposal = proposals[_id];
         if(proposal.status != ProposalStatus.APPROVED) revert INVALID_PROPOSAL_STATUS();
         proposals[_id].status = ProposalStatus.EXECUTED;
