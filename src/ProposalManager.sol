@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
+import "./treasury.sol";
+
 
 error Not_Admin();
 error INVALID_PROPOSAL_STATUS();
@@ -9,10 +11,13 @@ error PROPOSAL_DOES_NOT_EXIST();
 
 contract ProposalManager {
 
+    Treasury public treasury;
+
     address public admin;
 
-constructor(){
+constructor(address _treasury){
     admin = msg.sender;
+    treasury = Treasury(payable(_treasury))
 }
 
     enum ProposalStatus {
@@ -47,7 +52,7 @@ constructor(){
 
     event proposalCreated(address indexed proposer, address recipient, uint amount);
     event proposalApproved(uint indexed proposer_id);
-    event proposalexecuted(uint indexed proposer);
+    event proposalexecuted(uint indexed proposer_id);
 
     function createProposal(address _recipient, uint256 _amount) external {
         proposalCount++;
@@ -75,6 +80,8 @@ constructor(){
         Proposal storage proposal = proposals[_id];
         if(proposal.status != ProposalStatus.APPROVED) revert INVALID_PROPOSAL_STATUS();
         proposals[_id].status = ProposalStatus.EXECUTED;
+
+        treasury.sendFunds(proposal.recipient, proposal.amount);
 
         emit proposalexecuted(_id);
     }
