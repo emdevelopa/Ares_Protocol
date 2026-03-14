@@ -10,15 +10,19 @@ import {ProposalManager} from "../src/ProposalManager.sol";
 
 contract CounterTest is Test {
     Treasury public treasury;
+    ProposalManager public proposalManager;
 
     address admin = address(1);
     address user = address(2);
     address recipient = address(3);
 
     function setUp() public {
-        vm.prank(admin);
+        vm.startPrank(admin);
 
         treasury = new Treasury();
+        proposalManager = new ProposalManager(address(treasury));
+
+        vm.stopPrank();
 
         vm.deal(address(treasury), 10 ether);
 
@@ -89,56 +93,56 @@ contract CounterTest is Test {
 
     // ========Proposal Manager =============
 
-       enum ProposalStatus {
+    enum ProposalStatus {
         CREATED,
         APPROVED,
         EXECUTED
     }
 
     function test_ProposalManagerCreateProposal() public {
-        ProposalManager proposalManager = new ProposalManager();
-
         vm.prank(user);
         proposalManager.createProposal(recipient, 2);
 
         assertEq(proposalManager.getProposalByid(1).recipient, recipient);
         assertEq(proposalManager.getProposalByid(1).amount, 2);
 
-        assertEq(uint(proposalManager.getProposalByid(1).status), uint(ProposalStatus.CREATED));
+        assertEq(
+            uint(proposalManager.getProposalByid(1).status),
+            uint(ProposalStatus.CREATED)
+        );
     }
 
-     function test_ProposalManagerApproveProposal() public {
-        ProposalManager proposalManager = new ProposalManager();
-
+    function test_ProposalManagerApproveProposal() public {
         vm.prank(user);
         proposalManager.createProposal(recipient, 2);
 
-        
+        vm.prank(admin);
         proposalManager.approveProposal(1);
 
-        assertEq(uint(proposalManager.getProposalByid(1).status), uint(ProposalStatus.APPROVED));
+        assertEq(
+            uint(proposalManager.getProposalByid(1).status),
+            uint(ProposalStatus.APPROVED)
+        );
     }
 
     function test_ProposalManagerExecutedProposal() public {
-        ProposalManager proposalManager = new ProposalManager();
-
+        vm.prank(admin);
+        treasury.setAdmin(address(proposalManager));
         vm.prank(user);
-        proposalManager.createProposal(recipient, 2);
+        proposalManager.createProposal(recipient, 3);
+
+        vm.prank(admin);
         proposalManager.approveProposal(1);
 
-      
+        vm.prank(admin);
         proposalManager.executeProposal(1);
 
         // console.log("bbb", proposalManager.getProposalByid(1));
-        assertEq(uint(proposalManager.getProposalByid(1).status), uint(ProposalStatus.EXECUTED));
+        assertEq(
+            uint(proposalManager.getProposalByid(1).status),
+            uint(ProposalStatus.EXECUTED)
+        );
+
+        assertEq(address(recipient).balance, 3);
     }
-
-    // function testProposalStatus() public {
-
-    //     ProposalManager proposalManager = new ProposalManager();
-    //     ProposalManager.Proposal memory proposal = proposalManager
-    //         .getProposalByid(1);
-
-    //     assertEq(proposal.status, 0);
-    // }
 }

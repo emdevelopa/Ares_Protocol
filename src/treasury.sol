@@ -12,7 +12,7 @@ contract Treasury {
     }
 
     modifier onlyAdmin(uint _amount) {
-        if(admin != msg.sender) revert Not_Admin();
+        if (admin != msg.sender) revert Not_Admin();
 
         if (address(this).balance < _amount) revert Not_Enough_Balance();
         _;
@@ -22,13 +22,15 @@ contract Treasury {
         address recipient,
         uint amount
     ) external onlyAdmin(amount) returns (bool) {
-        
         (bool success, ) = payable(recipient).call{value: amount}("");
 
         return success;
     }
 
-  
+    function setAdmin(address newAdmin) external {
+        if (msg.sender != admin) revert Not_Admin();
+        admin = newAdmin;
+    }
 
     receive() external payable {}
     // fallback()external{}

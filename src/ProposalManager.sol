@@ -1,24 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "./treasury.sol";
-
+import {Treasury} from "./treasury.sol";
 
 error Not_Admin();
 error INVALID_PROPOSAL_STATUS();
 error PROPOSAL_DOES_NOT_EXIST();
- 
 
 contract ProposalManager {
-
     Treasury public treasury;
 
     address public admin;
 
-constructor(address _treasury){
-    admin = msg.sender;
-    treasury = Treasury(payable(_treasury))
-}
+    constructor(address _treasury) {
+        admin = msg.sender;
+        treasury = Treasury(payable(_treasury));
+    }
 
     enum ProposalStatus {
         CREATED,
@@ -40,17 +37,22 @@ constructor(address _treasury){
     // proposal #1, 0x23 says sends 2eth to 0x24
     mapping(uint256 => Proposal) public proposals;
 
-    modifier onlyAdmin(){
+    modifier onlyAdmin() {
         if (admin != msg.sender) revert Not_Admin();
         _;
     }
 
-      modifier proposalExists(uint256 proposalId) {
-        if(proposalCount > 0 && proposalId != proposalCount) revert PROPOSAL_DOES_NOT_EXIST(); 
+    modifier proposalExists(uint256 proposalId) {
+        if (proposalCount > 0 && proposalId != proposalCount)
+            revert PROPOSAL_DOES_NOT_EXIST();
         _;
-      }
+    }
 
-    event proposalCreated(address indexed proposer, address recipient, uint amount);
+    event proposalCreated(
+        address indexed proposer,
+        address recipient,
+        uint amount
+    );
     event proposalApproved(uint indexed proposer_id);
     event proposalexecuted(uint indexed proposer_id);
 
@@ -68,23 +70,26 @@ constructor(address _treasury){
         emit proposalCreated(msg.sender, _recipient, _amount);
     }
 
-    function approveProposal(uint _id)external onlyAdmin proposalExists(_id){
+    function approveProposal(uint _id) external onlyAdmin proposalExists(_id) {
         Proposal storage proposal = proposals[_id];
-        if(proposal.status != ProposalStatus.CREATED) revert INVALID_PROPOSAL_STATUS();
+        if (proposal.status != ProposalStatus.CREATED)
+            revert INVALID_PROPOSAL_STATUS();
         proposals[_id].status = ProposalStatus.APPROVED;
 
         emit proposalApproved(_id);
     }
 
-    function executeProposal(uint _id)external onlyAdmin proposalExists(_id){
+    function executeProposal(uint _id) external onlyAdmin proposalExists(_id) {
         Proposal storage proposal = proposals[_id];
-        if(proposal.status != ProposalStatus.APPROVED) revert INVALID_PROPOSAL_STATUS();
+        if (proposal.status != ProposalStatus.APPROVED)
+            revert INVALID_PROPOSAL_STATUS();
         proposals[_id].status = ProposalStatus.EXECUTED;
 
         treasury.sendFunds(proposal.recipient, proposal.amount);
 
         emit proposalexecuted(_id);
     }
+
 
     function getProposalByid(uint _id) external view returns (Proposal memory) {
         return proposals[_id];
